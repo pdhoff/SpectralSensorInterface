@@ -54,6 +54,8 @@ confirmCom<-function(timeout=1){
 #' @export
 getSpec<-function(leds=c("UV","VI","IR")){
 
+  if(!exists("SCON") || !serial::isOpen(SCON)){ specOpen() } 
+
   ## turn off all LEDs
   for(l in 0:5){ 
     serial::write.serialConnection(SCON,paste0("ATLED",l,"=0\n")) 
@@ -92,9 +94,9 @@ y
 
 }
 
-#' Get EEM 
+#' Get spectral matrix
 #' 
-#' Get excitation-emmission matrix (EEM). 
+#' Get spectrum under multiple illuminations. 
 #' 
 #' Eighteen spectral readings are obtained separately under each of the three 
 #' illumination bulbs (ultraviolet, visible light, infraread), 
@@ -104,7 +106,10 @@ y
 #' @author Peter Hoff
 #' @export
 #' @import graphics
-getEEM<-function(plot=FALSE){ 
+getSpecMat<-function(plot=FALSE){ 
+
+  if(!exists("SCON") || !serial::isOpen(SCON)){ specOpen() } 
+
   Y<-NULL
   for(led in c("UV","VI","IR")){ Y<-rbind(Y,getSpec(leds=led)) }
   rownames(Y)<-c("UV","VI","IR") 
@@ -136,5 +141,40 @@ Y
 #' @usage data(channelInfo)
 #' @format a data frame with 18 rows and 7 variables 
 NULL
+
+#' Get spectral matrices
+#' 
+#' Get spectral matricies for multiple samples.  
+#' 
+#' Interactively collects SMs for a series of samples, 
+#' allowing for naming of each sample. 
+#'
+#' @param n (integer) number of replicate scans per sample
+#' @author Peter Hoff
+#' @export
+#' @import abind
+getSpecMats<-function(n=5){
+
+  if(!exists("SCON") || !serial::isOpen(SCON)){ specOpen() } 
+
+  p1<-3 ; p2<-18 
+ 
+  SM<-array(dim=c(p1,p2,0))
+  snames<-sname<-NULL 
+
+  while( (sname<-readline("Enter sample name or 'stop': ")) !="stop" ){
+    X<-matrix(0,p1,p2) 
+    for(i in 1:n){ 
+      X<-X+getSpecMat()/n  
+      Sys.sleep(.25) 
+    }
+    SM<-abind::abind(SM,X,along=3)  
+    snames<-c(snames,sname) 
+    } 
+  dimnames(SM)[[1]]<-c("UV","VI","IR") 
+  dimnames(SM)[[2]]<-channelInfo$wavelength 
+  dimnames(SM)[[3]]<-snames 
+  SM
+}
 
 
