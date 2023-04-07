@@ -9,13 +9,36 @@ utils::globalVariables("SCON")
 #' @author Peter Hoff
 #' @export
 #' @import serial
-specOpen<-function(){ 
-  sdev<-list.files(path="/dev/serial/by-id")
-  port<-Sys.readlink(paste("/dev/serial/by-id/",sdev,sep="")) 
-  port<-gsub("../","",port) 
-  assign("SCON",serial::serialConnection(port=port,mode="115200,n,8,1"),.GlobalEnv) 
+specOpen<-function(){  
+
+  if(grepl("linux",version$os)){ 
+    sdev<-list.files(path="/dev/serial/by-id")
+    port<-Sys.readlink(paste("/dev/serial/by-id/",sdev,sep="")) 
+    port<-gsub("../","",port)  
+  }
+  else if(grepl("darwin",version$os)){
+    port<-suppressMessages(serial::listPorts())
+    port<-port[grep("serial",port)[1]]
+    port<-gsub("tty","cu",port) 
+  } 
+  else{ stop("Only linux and darwin systems are currently supported") }  
+
+  assign("SCON",serial::serialConnection(port=port,mode="115200,n,8,1"),
+         .GlobalEnv)  
+
   open(SCON) 
 }
+
+#' Close spectrometer connection
+#' 
+#' Close serial connection to the spectrometer. 
+#'
+#' An existing connection to the serial device is closed. 
+#' 
+#' @author Peter Hoff
+#' @export
+specClose<-function(){ close(SCON) } 
+
 
 #' Confirm command
 #'
@@ -58,7 +81,7 @@ getSpec<-function(leds=c("UV","VI","IR")){
 
   ## turn off all LEDs
   for(l in 0:5){ 
-    serial::write.serialConnection(SCON,paste0("ATLED",l,"=0\n")) 
+    serial::write.serialConnection(SCON,paste0("ATLED",l,"=0\n"))  
     confirmCom()
   }
  
@@ -76,7 +99,7 @@ getSpec<-function(leds=c("UV","VI","IR")){
 
   ## read data
   serial::write.serialConnection(SCON,"ATCDATA\n") 
-  y<-"" ; while(y==""){ y<-serial::read.serialConnection(SCON) }  
+  y<-"" ; while(y==""){ y<-serial::read.serialConnection(SCON) }   
   y<-as.numeric(strsplit(substr(y,1,nchar(y)-3),",")[[1]]) 
   y<-y[channelInfo$channelIndex] 
   names(y)<-channelInfo$wavelength
@@ -89,6 +112,8 @@ getSpec<-function(leds=c("UV","VI","IR")){
 
   ## turn indicator light back on 
   serial::write.serialConnection(SCON,"ATLED0=1\n") 
+  confirmCom() 
+  Sys.sleep(.25) 
 
 y 
 
@@ -116,31 +141,12 @@ getSpecMat<-function(plot=FALSE){
   colnames(Y)<-channelInfo$wavelength  
   if(plot){ 
     par(mfrow=c(3,1),mar=c(3,3,1,1),mgp=c(1.75,.75,0)) 
-    for(j in 1:nrow(Y)){ barplot(Y[j,],col=channelInfo$color) } 
+    for(j in 1:nrow(Y)){ plotSpec(Y[j,]) } 
   } 
 
 Y
 }
 
-#' Channel information
-#' 
-#' Spectral response information on the 18 channels of the AS7265x. The 
-#' variables are as follows:
-#' \itemize{ 
-#' \item channel name of channel 
-#' \item channelIndex order (index) of channel as returned by the device
-#' \item wavelength primary wavelength in nm
-#' \item color hex value of color 
-#' \item red red value for RGB approximation 
-#' \item green green value for RGB approximation 
-#' \item blue blue value for RGB approximation 
-#' }
-#' 
-#' @docType data
-#' @name channelInfo
-#' @usage data(channelInfo)
-#' @format a data frame with 18 rows and 7 variables 
-NULL
 
 #' Get spectral matrices
 #' 
@@ -176,5 +182,102 @@ getSpecMats<-function(n=5){
   dimnames(SM)[[3]]<-snames 
   SM
 }
+
+#' Channel information
+#' 
+#' Spectral response information on the 18 channels of the AS7265x. The 
+#' variables are as follows:
+#' \itemize{ 
+#' \item channel name of channel 
+#' \item channelIndex order (index) of channel as returned by the device
+#' \item wavelength primary wavelength in nm
+#' \item color hex value of color 
+#' \item red red value for RGB approximation 
+#' \item green green value for RGB approximation 
+#' \item blue blue value for RGB approximation 
+#' }
+#' 
+#' @docType data
+#' @name channelInfo
+#' @usage data(channelInfo)
+#' @format a data frame with 18 rows and 7 variables 
+NULL
+
+#' CIE color matching data
+#'  
+#' Data for conversion of visible light wavelengths to 
+#' relative stimulation of long, medium and short human cone 
+#' cells. The variables are as follows: 
+#' \itemize{ 
+#' \item wavelength 
+#' \item xbar 
+#' \item ybar 
+#' \item zbar
+#' } 
+#' These data were obtained from the reference below. 
+#' @docType data
+#' @name colorMatch 
+#' @usage data(colorMatch) 
+#' @format a data frame with 470 rows and 4 variables  
+#' @references \url{https://cie.co.at/datatable/cie-1931-colour-matching-functions-2-degree-observer} 
+NULL
+
+
+#' Spectrum to RGB 
+#' 
+#' Convert spectrum to XYZ values and then to RGB
+#'
+#' A spectrum is detected by the human eye by three sensors, 
+#' stiumulation of which is then converted by the brain  
+#' into color perception. 
+#' This function provides RGB values for the precieved 
+#' color. 
+#' 
+#' @param s a vector giving a spectrum, with names giving the wavelengths
+#' @author Peter Hoff
+#' @export 
+#' @references \url{https://www.fourmilab.ch/documents/specrend}
+#' @import grDevices
+#' @import stats
+spec2rgb<-function(s){
+  if(length(w<-as.numeric(names(s)))==0){ w<-channelInfo$wavelength }  
+ 
+  ## change this part - this is just to fix spline extrapolation 
+  w0<-c(colorMatch[1,1],w) 
+  s0<-c(0,s) 
+  ss<-pmax(0,spline(w0,s0,xout=colorMatch[,1] )$y)
+
+  C<-colorMatch[,2:4]  
+  C<-sweep(C,1,apply(C,1,sum),"/") 
+
+  xyz<-c(t(C)%*%ss)  
+  xyz<-xyz/sum(xyz) 
+
+  if(grepl("darwin",version$os)){ RGB<-"Apple RGB" } else{ RGB<-"sRGB" }  
+
+  grDevices::convertColor(xyz,from="XYZ",to=RGB) 
+}
+
+
+#' Spectrum plot 
+#' 
+#' Plots a spectrum as a bar plot 
+#' 
+#' @param s numeric vector giving the spectrum, with names equal to wavelengthts 
+#' @author Peter Hoff
+#' @export 
+plotSpec<-function(s){ 
+  srgb<-SSI::spec2rgb(s) 
+  w<-as.numeric(names(s))
+  plot(range(w),range(s),type="n",xlab="",xaxt="n",ylab="") 
+  pc<-par("usr")  
+  rect(pc[1],pc[3],pc[2],pc[4],col=rgb(srgb[1],srgb[2],srgb[3] ))    
+  
+  hw<-10
+  for(i in 1:length(s)){ 
+    rect(w[i]-hw,0,w[i]+hw,s[i],col=channelInfo$color[i],border=NA ) }  
+  axis(1,w,labels=w) 
+}
+
 
 

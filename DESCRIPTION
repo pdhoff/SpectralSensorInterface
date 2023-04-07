@@ -5,7 +5,7 @@ Description: This package provides and interface to the AS7265x spectral sensor,
 Date: 2023-03-19
 Authors@R: 
   person("Peter","Hoff",,"peter.hoff@duke.edu", role = c("aut", "cre")) 
-License: GPL-3
+License: GPL-3 + file LICENSE
 Imports: serial, abind
 Depends: R (>= 3.5.0) 
 RoxygenNote: 7.2.3
