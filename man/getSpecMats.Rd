@@ -10,7 +10,7 @@ getSpecMats(n = 5)
 \item{n}{(integer) number of replicate scans per sample}
 }
 \description{
-Get spectral matricies for multiple samples.
+Get spectral matrices for multiple samples.
 }
 \details{
 Interactively collects SMs for a series of samples, 

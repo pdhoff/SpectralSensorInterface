@@ -14,9 +14,9 @@ Convert spectrum to XYZ values and then to RGB
 }
 \details{
 A spectrum is detected by the human eye by three sensors, 
-stiumulation of which is then converted by the brain  
+stimulation of which is then converted by the brain  
 into color perception. 
-This function provides RGB values for the precieved 
+This function provides RGB values for the perceived 
 color.
 }
 \references{

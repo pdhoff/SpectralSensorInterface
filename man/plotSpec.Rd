@@ -7,7 +7,7 @@
 plotSpec(s)
 }
 \arguments{
-\item{s}{numeric vector giving the spectrum, with names equal to wavelengthts}
+\item{s}{numeric vector giving the spectrum, with names equal to wavelengths}
 }
 \description{
 Plots a spectrum as a bar plot

@@ -1,7 +1,7 @@
 Package: SSI
 Title: Spectral sensor interface
 Version: 0.1
-Description: This package provides and interface to the AS7265x spectral sensor, which is a low-cost chipset that provides 18-channel readings of the intensity of light at wavelenghts ranging from ultraviolet to infrared. 
+Description: This package provides and interface to the AS7265x spectral sensor, which is a low-cost chipset that provides 18-channel readings of the intensity of light at wavelengths ranging from ultraviolet to infrared. 
 Date: 2023-03-19
 Authors@R: 
   person("Peter","Hoff",,"peter.hoff@duke.edu", role = c("aut", "cre")) 

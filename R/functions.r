@@ -124,7 +124,7 @@ y
 #' Get spectrum under multiple illuminations. 
 #' 
 #' Eighteen spectral readings are obtained separately under each of the three 
-#' illumination bulbs (ultraviolet, visible light, infraread), 
+#' illumination bulbs (ultraviolet, visible light, infrared), 
 #' and the results are returned as a 3 by 18 matrix. 
 #'
 #' @param plot (logical) plot the spectrum
@@ -150,7 +150,7 @@ Y
 
 #' Get spectral matrices
 #' 
-#' Get spectral matricies for multiple samples.  
+#' Get spectral matrices for multiple samples.  
 #' 
 #' Interactively collects SMs for a series of samples, 
 #' allowing for naming of each sample. 
@@ -228,9 +228,9 @@ NULL
 #' Convert spectrum to XYZ values and then to RGB
 #'
 #' A spectrum is detected by the human eye by three sensors, 
-#' stiumulation of which is then converted by the brain  
+#' stimulation of which is then converted by the brain  
 #' into color perception. 
-#' This function provides RGB values for the precieved 
+#' This function provides RGB values for the perceived 
 #' color. 
 #' 
 #' @param s a vector giving a spectrum, with names giving the wavelengths
@@ -263,7 +263,7 @@ spec2rgb<-function(s){
 #' 
 #' Plots a spectrum as a bar plot 
 #' 
-#' @param s numeric vector giving the spectrum, with names equal to wavelengthts 
+#' @param s numeric vector giving the spectrum, with names equal to wavelengths 
 #' @author Peter Hoff
 #' @export 
 plotSpec<-function(s){ 

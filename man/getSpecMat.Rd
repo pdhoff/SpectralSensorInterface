@@ -14,7 +14,7 @@ Get spectrum under multiple illuminations.
 }
 \details{
 Eighteen spectral readings are obtained separately under each of the three 
-illumination bulbs (ultraviolet, visible light, infraread), 
+illumination bulbs (ultraviolet, visible light, infrared), 
 and the results are returned as a 3 by 18 matrix.
 }
 \author{
